@@ -81,21 +81,45 @@
         );
 
         function App() {
+            // Load data from localStorage
+            const loadData = (key, defaultValue) => {
+                try {
+                    const saved = localStorage.getItem(key);
+                    return saved ? JSON.parse(saved) : defaultValue;
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                    return defaultValue;
+                }
+            };
+
             const [view, setView] = useState('journal');
             const [selectedDate, setSelectedDate] = useState(new Date());
             const [habitMonthView, setHabitMonthView] = useState(new Date());
-            const [entries, setEntries] = useState({});
-            const [habits, setHabits] = useState([
+            const [entries, setEntries] = useState(() => loadData('journal_entries', {}));
+            const [habits, setHabits] = useState(() => loadData('habits', [
                 { id: 1, name: 'Morning meditation', completed: {} },
                 { id: 2, name: 'Exercise', completed: {} },
                 { id: 3, name: 'Read', completed: {} }
-            ]);
+            ]));
             const [newHabit, setNewHabit] = useState('');
             const [showAddHabit, setShowAddHabit] = useState(false);
             const [editingHabitId, setEditingHabitId] = useState(null);
             const [editingHabitName, setEditingHabitName] = useState('');
-            const [fontSize, setFontSize] = useState(14);
+            const [fontSize, setFontSize] = useState(() => loadData('font_size', 14));
             const editorRef = useRef(null);
+
+            // Save to localStorage whenever data changes
+            useEffect(() => {
+                localStorage.setItem('journal_entries', JSON.stringify(entries));
+            }, [entries]);
+
+            useEffect(() => {
+                localStorage.setItem('habits', JSON.stringify(habits));
+            }, [habits]);
+
+            useEffect(() => {
+                localStorage.setItem('font_size', JSON.stringify(fontSize));
+            }, [fontSize]);
 
             const dateKey = selectedDate.toISOString().split('T')[0];
             const currentEntry = entries[dateKey] || '';
@@ -418,7 +442,7 @@
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
                                     {habits.map(habit => {
                                         const monthDays = getMonthDays(habitMonthView);
                                         const daysInMonth = monthDays.length;
