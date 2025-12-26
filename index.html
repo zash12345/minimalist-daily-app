@@ -150,6 +150,11 @@
 
             const handleEntryChange = (text) => {
                 setEntries({ ...entries, [dateKey]: text });
+                // Auto-expand textarea
+                if (editorRef.current) {
+                    editorRef.current.style.height = 'auto';
+                    editorRef.current.style.height = editorRef.current.scrollHeight + 'px';
+                }
             };
 
             const handleTitleChange = (text) => {
@@ -419,14 +424,6 @@
                                 >
                                     Habits
                                 </button>
-                                <button
-                                    onClick={() => setView('calendar')}
-                                    className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                                        view === 'calendar' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-600 hover:bg-neutral-100'
-                                    }`}
-                                >
-                                    Calendar
-                                </button>
                             </div>
                         </div>
 
@@ -494,10 +491,11 @@
                                     className="w-full text-2xl font-semibold mb-4 focus:outline-none"
                                 />
                                 <textarea
+                                    ref={editorRef}
                                     value={currentEntry}
                                     onChange={(e) => handleEntryChange(e.target.value)}
                                     placeholder="What's on your mind today?"
-                                    className="w-full h-64 resize-none focus:outline-none"
+                                    className="w-full min-h-64 resize-none focus:outline-none overflow-hidden"
                                     style={{ fontSize: `${fontSize}px` }}
                                 />
                             </div>
@@ -599,10 +597,8 @@
                                                     <span>{completedCount} total</span>
                                                 </div>
 
-                                                <div className="space-y-1">
-                                                    {rows.map((row, rowIdx) => (
-                                                        <div key={rowIdx} className="flex gap-1">
-                                                            {row.map(({ date, key }) => {
+                                                <div className="flex flex-wrap gap-1">
+                                                    {monthDays.map(({ date, key }) => {
                                                                 const completed = habit.completed[key];
                                                                 const today = new Date();
                                                                 const isToday = date.toDateString() === today.toDateString();
@@ -635,49 +631,10 @@
                                                                 );
                                                             })}
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Calendar View */}
-                        {view === 'calendar' && (
-                            <div className="bg-white rounded-2xl p-6 shadow-sm">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-lg font-light">
-                                        {selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                                    </h2>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => changeMonth(-1)}
-                                            className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
-                                        >
-                                            <ChevronLeft size={20} />
-                                        </button>
-                                        <button
-                                            onClick={() => changeMonth(1)}
-                                            className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
-                                        >
-                                            <ChevronRight size={20} />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-7 gap-2 mb-2">
-                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                                        <div key={day} className="text-center text-sm text-neutral-500 font-medium py-2">
-                                            {day}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
-                                    ))}
-                                </div>
-
-                                <div className="grid grid-cols-7 gap-2">
-                                    {renderCalendar()}
-                                </div>
                             </div>
                         )}
                     </div>
