@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily - Journal & Habit Tracker</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📔</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📔</text></svg>">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Daily">
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
@@ -14,20 +19,6 @@
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
         }
-        [contenteditable] {
-            outline: none;
-        }
-        [contenteditable]:empty:before {
-            content: attr(placeholder);
-            color: #9ca3af;
-        }
-        [contenteditable] ul {
-            padding-left: 20px;
-            margin: 10px 0;
-        }
-        [contenteditable] li {
-            margin: 5px 0;
-        }
     </style>
 </head>
 <body>
@@ -36,7 +27,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // Lucide icons as inline SVG components
         const ChevronLeft = ({ size = 20 }) => (
             <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 18 9 12 15 6"></polyline>
@@ -69,41 +59,7 @@
             </svg>
         );
 
-        const Bold = ({ size = 20 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
-                <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"></path>
-            </svg>
-        );
-
-        const List = ({ size = 20 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="8" y1="6" x2="21" y2="6"></line>
-                <line x1="8" y1="12" x2="21" y2="12"></line>
-                <line x1="8" y1="18" x2="21" y2="18"></line>
-            </svg>
-        );
-
-        const Italic = ({ size = 20 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="19" y1="4" x2="10" y2="4"></line>
-                <line x1="14" y1="20" x2="5" y2="20"></line>
-                <line x1="15" y1="4" x2="9" y2="20"></line>
-            </svg>
-        );
-
-        const Palette = ({ size = 20 }) => (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="13.5" cy="6.5" r=".5"></circle>
-                <circle cx="17.5" cy="10.5" r=".5"></circle>
-                <circle cx="8.5" cy="7.5" r=".5"></circle>
-                <circle cx="6.5" cy="12.5" r=".5"></circle>
-                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
-            </svg>
-        );
-
         function App() {
-            // Load data from localStorage
             const loadData = (key, defaultValue) => {
                 try {
                     const saved = localStorage.getItem(key);
@@ -128,10 +84,8 @@
             const [editingHabitId, setEditingHabitId] = useState(null);
             const [editingHabitName, setEditingHabitName] = useState('');
             const [fontSize, setFontSize] = useState(() => loadData('font_size', 14));
-            const [showColorPicker, setShowColorPicker] = useState(false);
             const editorRef = useRef(null);
 
-            // Save to localStorage whenever data changes
             useEffect(() => {
                 localStorage.setItem('journal_entries', JSON.stringify(entries));
             }, [entries]);
@@ -150,7 +104,6 @@
 
             const handleEntryChange = (text) => {
                 setEntries({ ...entries, [dateKey]: text });
-                // Auto-expand textarea
                 if (editorRef.current) {
                     editorRef.current.style.height = 'auto';
                     editorRef.current.style.height = editorRef.current.scrollHeight + 'px';
@@ -209,119 +162,6 @@
                 setEditingHabitName('');
             };
 
-            const increaseFontSize = () => {
-                setFontSize(prev => Math.min(prev + 2, 32));
-            };
-
-            const decreaseFontSize = () => {
-                setFontSize(prev => Math.max(prev - 2, 10));
-            };
-
-            const toggleBold = () => {
-                document.execCommand('bold', false, null);
-                editorRef.current?.focus();
-            };
-
-            const toggleItalic = () => {
-                document.execCommand('italic', false, null);
-                editorRef.current?.focus();
-            };
-
-            const toggleBulletList = () => {
-                const editor = editorRef.current;
-                if (!editor) return;
-                
-                // Save current selection
-                const selection = window.getSelection();
-                if (!selection.rangeCount) return;
-                
-                const range = selection.getRangeAt(0);
-                
-                // Check if we're already in a list
-                let node = range.commonAncestorContainer;
-                if (node.nodeType === 3) node = node.parentNode; // If text node, get parent
-                
-                let inList = false;
-                let listElement = null;
-                let tempNode = node;
-                
-                while (tempNode && tempNode !== editor) {
-                    if (tempNode.nodeName === 'UL' || tempNode.nodeName === 'OL') {
-                        inList = true;
-                        listElement = tempNode;
-                        break;
-                    }
-                    tempNode = tempNode.parentNode;
-                }
-                
-                if (inList && listElement) {
-                    // Remove list - unwrap list items
-                    const items = listElement.querySelectorAll('li');
-                    const parent = listElement.parentNode;
-                    items.forEach(item => {
-                        const div = document.createElement('div');
-                        div.innerHTML = item.innerHTML;
-                        parent.insertBefore(div, listElement);
-                    });
-                    parent.removeChild(listElement);
-                } else {
-                    // Create list
-                    const selectedText = range.toString();
-                    if (selectedText) {
-                        const ul = document.createElement('ul');
-                        const lines = selectedText.split('\n').filter(line => line.trim());
-                        
-                        if (lines.length === 0) {
-                            const li = document.createElement('li');
-                            li.innerHTML = '&nbsp;';
-                            ul.appendChild(li);
-                        } else {
-                            lines.forEach(line => {
-                                const li = document.createElement('li');
-                                li.textContent = line.trim();
-                                ul.appendChild(li);
-                            });
-                        }
-                        
-                        range.deleteContents();
-                        range.insertNode(ul);
-                    } else {
-                        // No selection, just insert a bullet point
-                        const ul = document.createElement('ul');
-                        const li = document.createElement('li');
-                        li.innerHTML = '&nbsp;';
-                        ul.appendChild(li);
-                        range.insertNode(ul);
-                        
-                        // Place cursor inside the li
-                        const newRange = document.createRange();
-                        newRange.setStart(li, 0);
-                        newRange.collapse(true);
-                        selection.removeAllRanges();
-                        selection.addRange(newRange);
-                    }
-                }
-                
-                editor.focus();
-            };
-
-            const applyColor = (color) => {
-                document.execCommand('foreColor', false, color);
-                setShowColorPicker(false);
-                editorRef.current?.focus();
-            };
-
-            const changeFontSizeSelection = (size) => {
-                const sizeMap = {
-                    'small': '1',
-                    'normal': '3',
-                    'large': '5',
-                    'xlarge': '6'
-                };
-                document.execCommand('fontSize', false, sizeMap[size]);
-                editorRef.current?.focus();
-            };
-
             const changeDate = (days) => {
                 const newDate = new Date(selectedDate);
                 newDate.setDate(newDate.getDate() + days);
@@ -332,58 +172,6 @@
                 const newDate = new Date(habitMonthView);
                 newDate.setMonth(newDate.getMonth() + delta);
                 setHabitMonthView(newDate);
-            };
-
-            const getDaysInMonth = (date) => {
-                const year = date.getFullYear();
-                const month = date.getMonth();
-                const firstDay = new Date(year, month, 1);
-                const lastDay = new Date(year, month + 1, 0);
-                const daysInMonth = lastDay.getDate();
-                const startingDayOfWeek = firstDay.getDay();
-                
-                return { daysInMonth, startingDayOfWeek, year, month };
-            };
-
-            const changeMonth = (delta) => {
-                const newDate = new Date(selectedDate);
-                newDate.setMonth(newDate.getMonth() + delta);
-                setSelectedDate(newDate);
-            };
-
-            const renderCalendar = () => {
-                const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(selectedDate);
-                const days = [];
-                const today = new Date();
-                
-                for (let i = 0; i < startingDayOfWeek; i++) {
-                    days.push(<div key={`empty-${i}`} className="h-10" />);
-                }
-                
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const date = new Date(year, month, day);
-                    const key = date.toISOString().split('T')[0];
-                    const isToday = date.toDateString() === today.toDateString();
-                    const isSelected = date.toDateString() === selectedDate.toDateString();
-                    const hasEntry = entries[key] && entries[key].trim().length > 0;
-                    
-                    days.push(
-                        <button
-                            key={day}
-                            onClick={() => setSelectedDate(date)}
-                            className={`h-10 rounded-lg flex items-center justify-center text-sm relative transition-colors
-                                ${isSelected ? 'bg-neutral-900 text-white' : 'hover:bg-neutral-100'}
-                                ${isToday ? 'font-bold' : ''}`}
-                        >
-                            {day}
-                            {hasEntry && (
-                                <div className="absolute bottom-1 w-1 h-1 bg-neutral-400 rounded-full" />
-                            )}
-                        </button>
-                    );
-                }
-                
-                return days;
             };
 
             const getMonthDays = (date) => {
@@ -404,7 +192,6 @@
             return (
                 <div className="min-h-screen bg-neutral-50 p-4 md:p-8">
                     <div className="max-w-6xl mx-auto">
-                        {/* Header */}
                         <div className="flex items-center justify-between mb-8">
                             <h1 className="text-2xl font-light tracking-tight">{new Date().getFullYear()}</h1>
                             <div className="flex gap-2">
@@ -427,7 +214,6 @@
                             </div>
                         </div>
 
-                        {/* Date Navigation - Only show for Journal */}
                         {view === 'journal' && (
                             <div className="bg-white rounded-2xl p-4 mb-6 shadow-sm">
                                 <div className="flex items-center justify-between">
@@ -455,7 +241,6 @@
                             </div>
                         )}
 
-                        {/* Month Navigation - Only show for Habits */}
                         {view === 'habits' && (
                             <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm">
                                 <div className="flex items-center justify-between">
@@ -480,7 +265,6 @@
                             </div>
                         )}
 
-                        {/* Journal View */}
                         {view === 'journal' && (
                             <div className="bg-white rounded-2xl p-6 shadow-sm">
                                 <input
@@ -501,7 +285,6 @@
                             </div>
                         )}
 
-                        {/* Habits View */}
                         {view === 'habits' && (
                             <div className="bg-white rounded-2xl p-6 shadow-sm">
                                 <div className="flex items-center justify-between mb-6">
@@ -538,7 +321,6 @@
                                         const monthDays = getMonthDays(habitMonthView);
                                         const daysInMonth = monthDays.length;
                                         const today = new Date();
-                                        const todayKey = today.toISOString().split('T')[0];
                                         
                                         const completedCount = Object.values(habit.completed).filter(Boolean).length;
                                         const currentStreak = (() => {
@@ -553,12 +335,6 @@
                                             }
                                             return streak;
                                         })();
-
-                                        const boxesPerRow = daysInMonth === 31 ? 11 : 10;
-                                        const rows = [];
-                                        for (let i = 0; i < monthDays.length; i += boxesPerRow) {
-                                            rows.push(monthDays.slice(i, i + boxesPerRow));
-                                        }
 
                                         return (
                                             <div key={habit.id} className="border border-neutral-200 rounded-xl p-4">
@@ -599,42 +375,41 @@
 
                                                 <div className="flex flex-wrap gap-1">
                                                     {monthDays.map(({ date, key }) => {
-                                                                const completed = habit.completed[key];
-                                                                const today = new Date();
-                                                                const isToday = date.toDateString() === today.toDateString();
-                                                                const dayNumber = date.getDate();
-                                                                return (
-                                                                    <button
-                                                                        key={key}
-                                                                        onClick={() => {
-                                                                            const newHabits = habits.map(h => {
-                                                                                if (h.id === habit.id) {
-                                                                                    const newCompleted = { ...h.completed };
-                                                                                    newCompleted[key] = !newCompleted[key];
-                                                                                    return { ...h, completed: newCompleted };
-                                                                                }
-                                                                                return h;
-                                                                            });
-                                                                            setHabits(newHabits);
-                                                                        }}
-                                                                        className={`w-5 h-5 rounded-sm transition-all flex items-center justify-center text-[9px] font-medium ${
-                                                                            completed 
-                                                                                ? 'bg-green-600 hover:bg-green-700 text-white' 
-                                                                                : isToday
-                                                                                ? 'bg-neutral-100 hover:bg-neutral-200 text-red-500'
-                                                                                : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-400'
-                                                                        }`}
-                                                                        title={`${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${completed ? 'Completed' : 'Not completed'}`}
-                                                                    >
-                                                                        {dayNumber}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
+                                                        const completed = habit.completed[key];
+                                                        const isToday = date.toDateString() === today.toDateString();
+                                                        const dayNumber = date.getDate();
+                                                        return (
+                                                            <button
+                                                                key={key}
+                                                                onClick={() => {
+                                                                    const newHabits = habits.map(h => {
+                                                                        if (h.id === habit.id) {
+                                                                            const newCompleted = { ...h.completed };
+                                                                            newCompleted[key] = !newCompleted[key];
+                                                                            return { ...h, completed: newCompleted };
+                                                                        }
+                                                                        return h;
+                                                                    });
+                                                                    setHabits(newHabits);
+                                                                }}
+                                                                className={`w-5 h-5 rounded-sm transition-all flex items-center justify-center text-[9px] font-medium ${
+                                                                    completed 
+                                                                        ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                                                        : isToday
+                                                                        ? 'bg-neutral-100 hover:bg-neutral-200 text-red-500'
+                                                                        : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-400'
+                                                                }`}
+                                                                title={`${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${completed ? 'Completed' : 'Not completed'}`}
+                                                            >
+                                                                {dayNumber}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         )}
                     </div>
