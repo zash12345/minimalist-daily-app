@@ -70,10 +70,17 @@
                 }
             };
 
-            const [view, setView] = useState('journal');
+            const [view, setView] = useState('daily');
             const [selectedDate, setSelectedDate] = useState(new Date());
             const [habitMonthView, setHabitMonthView] = useState(new Date());
             const [entries, setEntries] = useState(() => loadData('journal_entries', {}));
+            const [daily, setDaily] = useState(() => loadData('daily', {}));
+            const [goals, setGoals] = useState(() => loadData('goals', {
+                urgentImportant: '',
+                notUrgentImportant: '',
+                urgentNotImportant: '',
+                notUrgentNotImportant: ''
+            }));
             const [habits, setHabits] = useState(() => loadData('habits', [
                 { id: 1, name: 'Morning meditation', completed: {} },
                 { id: 2, name: 'Exercise', completed: {} },
@@ -84,11 +91,21 @@
             const [editingHabitId, setEditingHabitId] = useState(null);
             const [editingHabitName, setEditingHabitName] = useState('');
             const [fontSize, setFontSize] = useState(() => loadData('font_size', 14));
+            const [newDailyTask, setNewDailyTask] = useState({});
+            const [editingTaskType, setEditingTaskType] = useState(null);
             const editorRef = useRef(null);
 
             useEffect(() => {
                 localStorage.setItem('journal_entries', JSON.stringify(entries));
             }, [entries]);
+
+            useEffect(() => {
+                localStorage.setItem('daily', JSON.stringify(daily));
+            }, [daily]);
+
+            useEffect(() => {
+                localStorage.setItem('goals', JSON.stringify(goals));
+            }, [goals]);
 
             useEffect(() => {
                 localStorage.setItem('habits', JSON.stringify(habits));
@@ -101,6 +118,11 @@
             const dateKey = selectedDate.toISOString().split('T')[0];
             const currentEntry = entries[dateKey] || '';
             const currentTitle = entries[`${dateKey}_title`] || '';
+            const currentDaily = daily[dateKey] || {};
+            const urgentImportantRef = useRef(null);
+            const notUrgentImportantRef = useRef(null);
+            const urgentNotImportantRef = useRef(null);
+            const notUrgentNotImportantRef = useRef(null);
 
             const handleEntryChange = (text) => {
                 setEntries({ ...entries, [dateKey]: text });
@@ -112,6 +134,67 @@
 
             const handleTitleChange = (text) => {
                 setEntries({ ...entries, [`${dateKey}_title`]: text });
+            };
+
+            const handleDailyChange = (timeSlot, tasks) => {
+                setDaily({
+                    ...daily,
+                    [dateKey]: {
+                        ...currentDaily,
+                        [timeSlot]: tasks
+                    }
+                });
+            };
+
+            const toggleDailyTaskComplete = (timeSlot, taskIndex) => {
+                const tasks = currentDaily[timeSlot] || [];
+                const updatedTasks = tasks.map((task, idx) => 
+                    idx === taskIndex ? { ...task, completed: !task.completed } : task
+                );
+                handleDailyChange(timeSlot, updatedTasks);
+            };
+
+            const addDailyTask = (timeSlot, text) => {
+                if (!text.trim()) return;
+                const tasks = currentDaily[timeSlot] || [];
+                handleDailyChange(timeSlot, [...tasks, { text, completed: false, type: 'onetime' }]);
+            };
+
+            const changeDailyTaskType = (timeSlot, taskIndex, type) => {
+                const tasks = currentDaily[timeSlot] || [];
+                const updatedTasks = tasks.map((task, idx) => 
+                    idx === taskIndex ? { ...task, type } : task
+                );
+                handleDailyChange(timeSlot, updatedTasks);
+                setEditingTaskType(null);
+            };
+
+            const deleteDailyTask = (timeSlot, taskIndex) => {
+                const tasks = currentDaily[timeSlot] || [];
+                handleDailyChange(timeSlot, tasks.filter((_, idx) => idx !== taskIndex));
+            };
+
+            const handleGoalsChange = (quadrant, text) => {
+                setGoals({ ...goals, [quadrant]: text });
+            };
+
+            const formatWithNumbers = (text) => {
+                if (!text) return '';
+                const lines = text.split('\n');
+                return lines.map((line, index) => {
+                    const trimmed = line.trim();
+                    // Remove existing numbers/bullets
+                    const cleaned = trimmed.replace(/^[\d]+\.?\s*|^[•\-\*]\s*/, '');
+                    // Only add number if line has content
+                    return cleaned ? `${index + 1}. ${cleaned}` : '';
+                }).filter(line => line).join('\n');
+            };
+
+            const handleGoalsBlur = (quadrant) => {
+                const formatted = formatWithNumbers(goals[quadrant]);
+                if (formatted !== goals[quadrant]) {
+                    setGoals({ ...goals, [quadrant]: formatted });
+                }
             };
 
             const toggleHabit = (habitId, date) => {
@@ -196,6 +279,22 @@
                             <h1 className="text-2xl font-light tracking-tight">{new Date().getFullYear()}</h1>
                             <div className="flex gap-2">
                                 <button
+                                    onClick={() => setView('daily')}
+                                    className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                                        view === 'daily' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-600 hover:bg-neutral-100'
+                                    }`}
+                                >
+                                    Daily
+                                </button>
+                                <button
+                                    onClick={() => setView('goals')}
+                                    className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                                        view === 'goals' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-600 hover:bg-neutral-100'
+                                    }`}
+                                >
+                                    Tasks
+                                </button>
+                                <button
                                     onClick={() => setView('journal')}
                                     className={`px-4 py-2 rounded-lg text-sm transition-colors ${
                                         view === 'journal' ? 'bg-neutral-900 text-white' : 'bg-white text-neutral-600 hover:bg-neutral-100'
@@ -213,6 +312,237 @@
                                 </button>
                             </div>
                         </div>
+
+                        {view === 'goals' && (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-semibold text-center mb-6">
+                                    {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                </h2>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Urgent & Important */}
+                                    <div className="bg-red-50 rounded-2xl p-4 shadow-sm border-2 border-red-200">
+                                        <h3 className="text-sm font-semibold text-red-700 mb-2">🔥 Urgent & Important</h3>
+                                        <p className="text-xs text-red-600 mb-3">Do First - Critical tasks</p>
+                                        <textarea
+                                            ref={urgentImportantRef}
+                                            value={goals.urgentImportant}
+                                            onChange={(e) => handleGoalsChange('urgentImportant', e.target.value)}
+                                            onBlur={() => handleGoalsBlur('urgentImportant')}
+                                            placeholder="Crisis&#10;Deadlines&#10;Emergencies"
+                                            className="w-full min-h-40 resize-none focus:outline-none bg-white rounded-lg p-3 text-sm"
+                                        />
+                                    </div>
+
+                                    {/* Not Urgent & Important */}
+                                    <div className="bg-green-50 rounded-2xl p-4 shadow-sm border-2 border-green-200">
+                                        <h3 className="text-sm font-semibold text-green-700 mb-2">📅 Not Urgent & Important</h3>
+                                        <p className="text-xs text-green-600 mb-3">Schedule - Plan ahead</p>
+                                        <textarea
+                                            ref={notUrgentImportantRef}
+                                            value={goals.notUrgentImportant}
+                                            onChange={(e) => handleGoalsChange('notUrgentImportant', e.target.value)}
+                                            onBlur={() => handleGoalsBlur('notUrgentImportant')}
+                                            placeholder="Long-term goals&#10;Planning&#10;Learning"
+                                            className="w-full min-h-40 resize-none focus:outline-none bg-white rounded-lg p-3 text-sm"
+                                        />
+                                    </div>
+
+                                    {/* Urgent & Not Important */}
+                                    <div className="bg-yellow-50 rounded-2xl p-4 shadow-sm border-2 border-yellow-200">
+                                        <h3 className="text-sm font-semibold text-yellow-700 mb-2">⚡ Urgent & Not Important</h3>
+                                        <p className="text-xs text-yellow-600 mb-3">Delegate - If possible</p>
+                                        <textarea
+                                            ref={urgentNotImportantRef}
+                                            value={goals.urgentNotImportant}
+                                            onChange={(e) => handleGoalsChange('urgentNotImportant', e.target.value)}
+                                            onBlur={() => handleGoalsBlur('urgentNotImportant')}
+                                            placeholder="Interruptions&#10;Some calls&#10;Some emails"
+                                            className="w-full min-h-40 resize-none focus:outline-none bg-white rounded-lg p-3 text-sm"
+                                        />
+                                    </div>
+
+                                    {/* Not Urgent & Not Important */}
+                                    <div className="bg-neutral-50 rounded-2xl p-4 shadow-sm border-2 border-neutral-200">
+                                        <h3 className="text-sm font-semibold text-neutral-700 mb-2">❌ Not Urgent & Not Important</h3>
+                                        <p className="text-xs text-neutral-600 mb-3">Eliminate - Time wasters</p>
+                                        <textarea
+                                            ref={notUrgentNotImportantRef}
+                                            value={goals.notUrgentNotImportant}
+                                            onChange={(e) => handleGoalsChange('notUrgentNotImportant', e.target.value)}
+                                            onBlur={() => handleGoalsBlur('notUrgentNotImportant')}
+                                            placeholder="Distractions&#10;Time wasters&#10;Busywork"
+                                            className="w-full min-h-40 resize-none focus:outline-none bg-white rounded-lg p-3 text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'daily' && (
+                            <div className="bg-white rounded-2xl p-4 mb-6 shadow-sm">
+                                <div className="flex items-center justify-between">
+                                    <button 
+                                        onClick={() => changeDate(-1)}
+                                        className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+                                    >
+                                        <ChevronLeft size={20} />
+                                    </button>
+                                    <div className="text-center">
+                                        <p className="text-sm text-neutral-500 font-semibold" style={{ marginBottom: '0.4px' }}>
+                                            {selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}
+                                        </p>
+                                        <p className="text-lg font-semibold">
+                                            {selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                        </p>
+                                    </div>
+                                    <button 
+                                        onClick={() => changeDate(1)}
+                                        className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'daily' && (
+                            <div className="space-y-3">
+                                {[
+                                    { time: '04:00', label: '4 AM', period: 'morning' },
+                                    { time: '05:00', label: '5 AM', period: 'morning' },
+                                    { time: '06:00', label: '6 AM', period: 'morning' },
+                                    { time: '07:00', label: '7 AM', period: 'morning' },
+                                    { time: '08:00', label: '8 AM', period: 'morning' },
+                                    { time: '09:00', label: '9 AM', period: 'morning' },
+                                    { time: '10:00', label: '10 AM', period: 'morning' },
+                                    { time: '11:00', label: '11 AM', period: 'morning' },
+                                    { time: '12:00', label: '12 PM', period: 'afternoon' },
+                                    { time: '13:00', label: '1 PM', period: 'afternoon' },
+                                    { time: '14:00', label: '2 PM', period: 'afternoon' },
+                                    { time: '15:00', label: '3 PM', period: 'afternoon' },
+                                    { time: '16:00', label: '4 PM', period: 'afternoon' },
+                                    { time: '17:00', label: '5 PM', period: 'afternoon' },
+                                    { time: '18:00', label: '6 PM', period: 'evening' },
+                                    { time: '19:00', label: '7 PM', period: 'evening' },
+                                    { time: '20:00', label: '8 PM', period: 'evening' },
+                                    { time: '21:00', label: '9 PM', period: 'evening' },
+                                    { time: '22:00', label: '10 PM', period: 'evening' },
+                                ].map(({ time, label, period }) => {
+                                    const bgColor = period === 'morning' ? 'bg-blue-50 border-blue-200' : 
+                                                   period === 'afternoon' ? 'bg-yellow-50 border-yellow-200' : 
+                                                   'bg-purple-50 border-purple-200';
+                                    const tasks = currentDaily[time] || [];
+                                    
+                                    return (
+                                        <div key={time} className={`${bgColor} rounded-xl p-4 border-2`}>
+                                            <div className="mb-3">
+                                                <span className="font-semibold text-sm text-neutral-700">{label}</span>
+                                            </div>
+                                            
+                                            <div className="space-y-2 mb-3">
+                                                {tasks.map((task, idx) => {
+                                                    const taskId = `${time}-${idx}`;
+                                                    const isEditing = editingTaskType === taskId;
+                                                    const typeColors = {
+                                                        onetime: 'bg-blue-500',
+                                                        daily: 'bg-green-500',
+                                                        routine: 'bg-purple-500'
+                                                    };
+                                                    const typeLabels = {
+                                                        onetime: 'One-time',
+                                                        daily: 'Daily',
+                                                        routine: 'Routine'
+                                                    };
+                                                    
+                                                    return (
+                                                        <div key={idx} className="bg-white rounded-lg p-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={() => toggleDailyTaskComplete(time, idx)}
+                                                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+                                                                        task.completed
+                                                                            ? 'bg-neutral-900 border-neutral-900'
+                                                                            : 'border-neutral-300 hover:border-neutral-400'
+                                                                    }`}
+                                                                >
+                                                                    {task.completed && <Check size={14} className="text-white" />}
+                                                                </button>
+                                                                
+                                                                <span className={`flex-1 text-sm ${task.completed ? 'line-through text-neutral-400' : ''}`}>
+                                                                    {task.text}
+                                                                </span>
+                                                                
+                                                                <button
+                                                                    onClick={() => deleteDailyTask(time, idx)}
+                                                                    className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                                                                >
+                                                                    <X size={14} className="text-neutral-400" />
+                                                                </button>
+
+                                                                <button
+                                                                    onClick={() => setEditingTaskType(isEditing ? null : taskId)}
+                                                                    className={`${typeColors[task.type]} w-6 h-6 rounded hover:opacity-80 transition-opacity flex-shrink-0`}
+                                                                    title={typeLabels[task.type]}
+                                                                />
+                                                            </div>
+                                                            
+                                                            {isEditing && (
+                                                                <div className="flex gap-2 mt-2 ml-7">
+                                                                    <button
+                                                                        onClick={() => changeDailyTaskType(time, idx, 'onetime')}
+                                                                        className="px-3 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                                                                    >
+                                                                        One-time
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => changeDailyTaskType(time, idx, 'daily')}
+                                                                        className="px-3 py-1 text-xs rounded bg-green-500 text-white hover:bg-green-600 transition-colors"
+                                                                    >
+                                                                        Daily
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => changeDailyTaskType(time, idx, 'routine')}
+                                                                        className="px-3 py-1 text-xs rounded bg-purple-500 text-white hover:bg-purple-600 transition-colors"
+                                                                    >
+                                                                        Routine
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={newDailyTask[time] || ''}
+                                                    onChange={(e) => setNewDailyTask({ ...newDailyTask, [time]: e.target.value })}
+                                                    onKeyPress={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            addDailyTask(time, newDailyTask[time]);
+                                                            setNewDailyTask({ ...newDailyTask, [time]: '' });
+                                                        }
+                                                    }}
+                                                    placeholder="Add task..."
+                                                    className="flex-1 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        addDailyTask(time, newDailyTask[time]);
+                                                        setNewDailyTask({ ...newDailyTask, [time]: '' });
+                                                    }}
+                                                    className="px-3 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors"
+                                                >
+                                                    <Plus size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
 
                         {view === 'journal' && (
                             <div className="bg-white rounded-2xl p-4 mb-6 shadow-sm">
